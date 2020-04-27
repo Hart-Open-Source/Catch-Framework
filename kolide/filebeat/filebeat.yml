@@ -1,0 +1,26 @@
+#=====================Prospector Setup =======================================
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths: ["/osquerylogs/osquery_results"]
+  json.keys_under_root: true
+
+#============================= Filebeat modules ===============================
+
+filebeat.config.modules:
+  # Glob pattern for configuration loading
+  path: ${path.config}/modules.d/*.yml
+
+  # Set to true to enable config reloading
+  reload.enabled: false
+
+#==================== Elasticsearch template setting ==========================
+
+setup.template.settings:
+  index.number_of_shards: 1
+
+#================================ Outputs =====================================
+#----------------------------- Logstash output --------------------------------
+output.logstash:
+  # The Logstash hosts
+  hosts: ["logstash:5044"]

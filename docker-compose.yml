@@ -1,0 +1,145 @@
+version: '3.2'
+services:
+  elasticsearch:
+    container_name: "elastic"
+    build:
+      context: elasticsearch/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    volumes:
+      - type: bind
+        source: ./elasticsearch/config/elasticsearch.yml
+        target: /usr/share/elasticsearch/config/elasticsearch.yml
+        read_only: true
+      - type: volume
+        source: elasticsearch
+        target: /usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      ELASTIC_PASSWORD: elasticpass 
+      discovery.type: single-node
+    networks:
+      - elk
+
+  logstash:
+    container_name: "logstash"
+    build:
+      context: logstash/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    volumes:
+      - type: bind
+        source: ./logstash/config/logstash.yml
+        target: /usr/share/logstash/config/logstash.yml
+        read_only: true
+      - type: bind
+        source: ./logstash/pipeline
+        target: /usr/share/logstash/pipeline
+        read_only: true
+    ports:
+      - "5044:5044"
+      - "9600:9600"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    container_name: "kibana"
+    build:
+      context: kibana/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    volumes:
+      - type: bind
+        source: ./kibana/config/kibana.yml
+        target: /usr/share/kibana/config/kibana.yml
+        read_only: true
+    ports:
+      - "5601:5601"
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+  mysql:
+    container_name: "mysql"
+    build:
+      context: mysql/
+    environment:
+      MYSQL_ROOT_PASSWORD: $MYSQL_PASS
+      MYSQL_DATABASE: kolide
+      MYSQL_USER: kolide
+      MYSQL_PASSWORD: $MYSQL_PASS
+    ports:
+      - "3306:3306"
+    networks:
+      - elk
+
+  redis:
+    container_name: "redis"
+    build:
+      context: redis/
+    environment:
+      REDIS_PASSWORD: $REDIS_PASS
+    ports:
+      - "6379:6379"
+    networks:
+      - elk
+
+  kolide:
+    container_name: "kolide"
+    build:
+      context: kolide/
+    volumes:
+      - type: bind
+        source: ./kolide/certs
+        target: /certs
+        read_only: true
+      - type: bind
+        source: ./kolide/querypacks
+        target: /querypacks
+        read_only: true
+      - type: bind
+        source: ./kolide/filebeat/filebeat.yml
+        target: /filebeat/filebeat.yml
+        read_only: true
+      - type: bind
+        source: ./kolide/start.sh
+        target: /start.sh
+        read_only: true
+    environment:
+      KOLIDE_MYSQL_ADDRESS: mysql:3306
+      KOLIDE_MYSQL_DATABASE: kolide
+      KOLIDE_MYSQL_USERNAME: root
+      KOLIDE_MYSQL_PASSWORD: $MYSQL_PASS
+      KOLIDE_REDIS_ADDRESS: redis:6379
+      KOLIDE_REDIS_PASSWORD: $REDIS_PASS
+      KOLIDE_SERVER_CERT: /certs/server.cert
+      KOLIDE_SERVER_KEY: /certs/server.key
+      KOLIDE_LOGGING_JSON: "true"
+      KOLIDE_AUTH_JWT_KEY: $JWT_KEY
+      KOLIDE_FILESYSTEM_RESULT_LOG_FILE: /osquerylogs/osquery_results
+      KOLIDE_FILESYSTEM_STATUS_LOG_FILE: /osquerylogs/osquery_status
+      KOLIDE_FILESYSTEM_ENABLE_LOG_ROTATION: "true"
+    entrypoint: /start.sh 
+    ports:
+      - "8080:8080"
+    networks:
+      - elk
+    depends_on:
+      - mysql
+      - redis
+
+networks:
+  elk:
+    driver: bridge
+
+volumes:
+  elasticsearch:
+  

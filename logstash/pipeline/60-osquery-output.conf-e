@@ -1,0 +1,13 @@
+input {
+  beats {
+    port => 5044
+  }
+}
+output {
+  elasticsearch {
+      hosts => "elasticsearch:9200"
+      index => "osquery-result-%{+YYYY.MM.dd}"
+      user => "elastic"
+      password => "elasticpass"
+    }
+}

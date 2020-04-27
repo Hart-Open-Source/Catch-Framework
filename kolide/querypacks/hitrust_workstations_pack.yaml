@@ -1,0 +1,82 @@
+---
+apiVersion: v1
+kind: pack
+spec:
+  name: hitrust-workstations-pack
+  queries:
+  - description: Get authentication screen authorization banner for OSX.
+    interval: 30
+    name: OsxLoginText
+    platform: darwin
+    query: OsxLoginText
+    shard: 100
+    snapshot: true
+  - description: Get account policy data for logged-in OSX user.
+    interval: 30
+    name: OsxAccountPolicy
+    platform: darwin
+    query: OsxAccountPolicy
+    shard: 100
+    snapshot: true
+  - description: Get the size of the audit log file for OSX.
+    interval: 30
+    name: OsxAuditLogSize
+    platform: darwin
+    query: OsxAuditLogSize
+    shard: 100
+    snapshot: true
+  - description: Get currently logged-in user's group id (gid) for OSX.
+    interval: 30
+    name: OsxUserGid
+    platform: darwin
+    query: OsxUserGid
+    shard: 100
+    snapshot: true
+  - description: Get a list of installed applications for OSX.
+    interval: 30
+    name: OsxApps
+    platform: darwin
+    query: OsxApps
+    shard: 100
+    snapshot: true
+  targets:
+    labels: null
+---
+apiVersion: v1
+kind: query
+spec:
+  description: Get authentication screen authorization banner for OSX.
+  name: OsxLoginText
+  query: select value as logintext from plist where path = '/Library/Preferences/com.apple.loginwindow.plist'
+    and key = 'LoginwindowText';
+---
+apiVersion: v1
+kind: query
+spec:
+  description: Get account policy data for logged-in OSX user.
+  name: OsxAccountPolicy
+  query: select from_base64(value) as accountpolicy from plist where path in (select
+    distinct '/var/db/dslocal/nodes/Default/users/'||user||'.plist' from logged_in_users)
+    and key = 'accountPolicyData';
+---
+apiVersion: v1
+kind: query
+spec:
+  description: Get the size of the audit log file for OSX.
+  name: OsxAuditLogSize
+  query: select size as auditlogsize from file where path = '/var/audit/current';
+---
+apiVersion: v1
+kind: query
+spec:
+  description: Get currently logged-in user's group id (gid) for OSX.
+  name: OsxUserGid
+  query: select distinct gid from users join logged_in_users on users.username = logged_in_users.user;
+---
+apiVersion: v1
+kind: query
+spec:
+  description: Get a list of installed applications for OSX.
+  name: OsxApps
+  query: select name as appname from apps where appname like '%lastpass%' or appname
+    like '%1password%' or appname like '%dashlane%';
