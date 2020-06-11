@@ -1,4 +1,4 @@
-# ELK-Kolide for Osquery
+# Catch Framework
 
 ## Overview
 A containerized setup for Catch, ELK and Kolide Fleet server, for automated HITRUST security audits against servers/containers and MacOS workstations.
