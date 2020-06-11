@@ -18,7 +18,7 @@ services:
       - "9200:9200"
       - "9300:9300"
     environment:
-      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      ES_JAVA_OPTS: "-Xmx512m -Xms512m"
       ELASTIC_PASSWORD: elasticpass 
       discovery.type: single-node
     networks:
@@ -135,6 +135,34 @@ services:
     depends_on:
       - mysql
       - redis
+
+  mongodb:
+    container_name: "mongodb"
+    image: "mongo"
+    ports:
+      - "27017:27017"
+    networks:
+      - elk
+
+  catch:
+    container_name: "catch"
+    build:
+      context: catch/
+    environment:
+      ELASTIC_SERVER: elastic
+      ELASTIC_PORT: 9200
+      ELASTIC_USER: elastic
+      ELASTIC_PASSWORD: elasticpass
+      JIRA_URL: $JIRA_URL
+      JIRA_USER: $JIRA_USER
+      JIRA_PASSWORD: $JIRA_PASSWORD
+    ports:
+      - "9090:9090"
+    networks:
+      - elk
+    depends_on:
+      - mongodb
+
 
 networks:
   elk:
